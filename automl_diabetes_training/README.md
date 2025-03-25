@@ -58,11 +58,98 @@ O modelo final escolhido foi o **VotingEnsemble**, devido à sua maior precisão
 
 ### Código de Treinamento do Modelo
 
-O treinamento do modelo foi realizado utilizando o **AutoMLConfig** do Azure Machine Learning, que permite configurar parâmetros como o tipo de tarefa (classificação), a métrica principal (acurácia), e o número de validações cruzadas. O modelo treinado foi exportado e salvo em formato `.pkl` utilizando a biblioteca `joblib`.
+```python
+# %% [markdown]
+# # Train a classification model with Automated Machine Learning
+# 
+# Azure Machine Learning enables you to automate the comparison of models trained using different algorithms and preprocessing options. You can use the visual interface in Azure Machine Learning Studio or the Python SDK to leverage this capability. 
+# 
+# ## Before you start
+# You'll need the latest version of the **azure-ai-ml** package to run the code in this notebook.
+# 
+# If the **azure-ai-ml** package is not installed, run `pip install azure-ai-ml` to install it.
+# 
+
+# %% 
+pip show azure-ai-ml
+
+# %% [markdown]
+# ## Connect to your workspace
+# With the required SDK packages installed, now you're ready to connect to your workspace.
+
+from azure.identity import DefaultAzureCredential, InteractiveBrowserCredential
+from azure.ai.ml import MLClient
+
+try:
+    credential = DefaultAzureCredential()
+    # Check if given credential can get token successfully.
+    credential.get_token("https://management.azure.com/.default")
+except Exception as ex:
+    credential = InteractiveBrowserCredential()
+
+# Get a handle to workspace
+ml_client = MLClient.from_config(credential=credential)
+
+# %% [markdown]
+# ## Prepare data
+# Prepare the diabetes dataset to use as input for the AutoML job.
+from azure.ai.ml.constants import AssetTypes
+from azure.ai.ml import Input
+
+my_training_data_input = Input(type=AssetTypes.MLTABLE, path="azureml:diabetes-training:1")
+
+# %% [markdown]
+# ## Configure automated machine learning job
+# Here, you configure the AutoML job with the settings for model training, such as the target column and the algorithms to exclude (e.g., LogisticRegression).
+from azure.ai.ml import automl
+
+classification_job = automl.classification(
+    compute="aml-cluster",
+    experiment_name="auto-ml-class-dev",
+    training_data=my_training_data_input,
+    target_column_name="Diabetic",
+    primary_metric="accuracy",
+    n_cross_validations=5,
+    enable_model_explainability=True
+)
+
+classification_job.set_limits(
+    timeout_minutes=60, 
+    trial_timeout_minutes=20, 
+    max_trials=5,
+    enable_early_termination=True,
+)
+
+classification_job.set_training(
+    blocked_training_algorithms=["LogisticRegression"], 
+    enable_onnx_compatible_models=True
+)
+
+# %% 
+returned_job = ml_client.jobs.create_or_update(classification_job)
+aml_url = returned_job.studio_url
+print("Monitor your job at", aml_url)
+```
 
 ### Código de Inferência
 
-O script **inference.py** foi criado para permitir que o modelo treinado seja utilizado em novas previsões. Após o treinamento, é possível carregar o modelo salvo e fazer previsões para novos dados. Por exemplo, dados de pacientes com características como **idade**, **nível de glicose no sangue**, e **índice de massa corporal** podem ser passados para o modelo, que retornará a previsão se o paciente tem ou não diabetes.
+```python
+import joblib
+from azureml.core import Workspace, Model
+
+# Connect to the Workspace
+ws = Workspace.from_config()
+
+# Load the registered model
+model_name = 'diabetes_modelo'
+model_version = 1
+
+model = Model(ws, name=model_name, version=model_version)
+
+# Download the model to the local directory
+model.download(target_dir='./', exist_ok=True)
+print(f"Modelo {model_name} versão {model_version} foi baixado com sucesso.")
+```
 
 ## Considerações Finais
 
