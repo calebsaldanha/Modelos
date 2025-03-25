@@ -1,0 +1,33 @@
+artifact_path: outputs/mlflow-model
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.9.21
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: pickle
+    sklearn_version: 1.5.1
+metadata:
+  azureml.base_image: mcr.microsoft.com/azureml/curated/ai-ml-automl:19
+  azureml.engine: automl
+mlflow_version: 2.15.1
+model_size_bytes: 805192
+model_uuid: 58a9ed38cbaa4a8e8a392677df0904c2
+run_id: good_carpet_8v471f0hf6_3
+signature:
+  inputs: '[{"type": "long", "name": "PatientID", "required": true}, {"type": "long",
+    "name": "Pregnancies", "required": true}, {"type": "long", "name": "PlasmaGlucose",
+    "required": true}, {"type": "long", "name": "DiastolicBloodPressure", "required":
+    true}, {"type": "long", "name": "TricepsThickness", "required": true}, {"type":
+    "long", "name": "SerumInsulin", "required": true}, {"type": "double", "name":
+    "BMI", "required": true}, {"type": "double", "name": "DiabetesPedigree", "required":
+    true}, {"type": "long", "name": "Age", "required": true}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "bool", "shape": [-1]}}]'
+  params: null
+utc_time_created: '2025-03-25 21:15:40.687447'
